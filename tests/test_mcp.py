@@ -281,6 +281,8 @@ def test_download_lifecycle(env):
             "Youtube/A video [abc123].en.srt",
         ]
         assert job["estimated_bytes"] == 21_000_000
+        assert job["progress"]["phase"] == "completed"
+        assert job["progress"]["percent"] == 100.0
         assert engine.specs[0].subtitles == ["en"]
         assert not (tmp / "dl" / ".incomplete" / job["job_id"]).exists()
         listed, _ = call(c, "list_downloads", {"state": "completed"})

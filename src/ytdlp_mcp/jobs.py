@@ -56,6 +56,10 @@ class Job:
     def view(self) -> dict:
         p = dict(self.progress)
         done = p.get("downloaded_bytes")
+        if self.state in FINAL:
+            p["phase"] = self.state
+            p.pop("speed_bps", None)
+            p.pop("eta_seconds", None)
         if self.state == "completed":
             p["percent"] = 100.0
         elif done and self.estimated_bytes:
