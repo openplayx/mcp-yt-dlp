@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "server": {
+    "host": "0.0.0.0",
+    "port": 8800,
+    "log_level": "INFO"
+  },
+  "storage": {
+    "database": "/data/yt-dlp.sqlite3",
+    "download_root": "/downloads",
+    "cache_dir": "/data/cache"
+  },
+  "limits": {
+    "max_concurrent_downloads": 1,
+    "max_active_jobs": 10,
+    "max_task_bytes": 4294967296,
+    "min_free_bytes": 10737418240,
+    "max_duration_seconds": 14400,
+    "info_timeout_seconds": 45,
+    "requests_per_minute": 120,
+    "max_subtitle_languages": 5
+  },
+  "network": {
+    "allow_private_addresses": false,
+    "allowed_extractors": [],
+    "allow_generic_extractor": true,
+    "proxy_ref": null,
+    "socket_timeout_seconds": 20,
+    "rate_limit_bytes_per_second": null
+  }
+}

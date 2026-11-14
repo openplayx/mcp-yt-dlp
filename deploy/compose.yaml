@@ -1,0 +1,29 @@
+# Independent Compose project; data, downloads and secrets stay inside it.
+#   YTDLP_IMAGE=openplayx/yt-dlp:<tag> APP_UID=$(id -u) APP_GID=$(id -g) \
+#   DATA_DIR=../data DOWNLOAD_ROOT=../downloads BIND=<ip> PORT=18800 \
+#     docker compose -p openplayx-yt-dlp -f compose.yaml up -d
+name: openplayx-yt-dlp
+services:
+  yt-dlp:
+    image: ${YTDLP_IMAGE:?set YTDLP_IMAGE}
+    restart: unless-stopped
+    user: "${APP_UID:-10001}:${APP_GID:-10001}"
+    ports:
+      - "${BIND:-127.0.0.1}:${PORT:-18800}:8800"
+    volumes:
+      - ./config.json:/config/config.json:ro
+      - ./secrets.json:/run/secrets/yt-dlp.json:ro
+      - ${DATA_DIR:?set DATA_DIR}:/data
+      - ${DOWNLOAD_ROOT:?set DOWNLOAD_ROOT}:/downloads
+    read_only: true
+    tmpfs:
+      - /tmp:size=256m
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 1g
+    cpus: 2.0
+    pids_limit: 256
+    stop_grace_period: 15s
+    logging:
+      driver: json-file
+      options: {max-size: "10m", max-file: "3"}
