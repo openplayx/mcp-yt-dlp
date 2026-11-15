@@ -1,6 +1,8 @@
 # mcp-yt-dlp
 
-OpenPlayX external service that wraps [yt-dlp](https://github.com/yt-dlp/yt-dlp)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
+An [OpenPlayX](https://github.com/openplayx/openplayx) external service that wraps [yt-dlp](https://github.com/yt-dlp/yt-dlp)
 as an MCP server: inspect a video URL, then download it to the server in the
 background at a chosen quality.
 
@@ -45,15 +47,98 @@ streams, cookies/logins, `yt-dlp -U` self-update.
 - Jobs do not survive a restart: running ones become `interrupted` and
   their partial files are removed.
 
+## Quick start
+
+Requirements: Docker, or Python 3.12 with [uv](https://docs.astral.sh/uv/)
+and ffmpeg for local development.
+
+1. Create a token and the configuration:
+
+   ```bash
+   cd deploy
+   cp config.example.json config.json
+   cp secrets.example.json secrets.json
+   TOKEN=$(python3 -c 'import secrets; print(secrets.token_urlsafe(32))')
+   printf '%s' "$TOKEN" | shasum -a 256   # put the digest into secrets.json → token_sha256
+   ```
+
+   Instead of a digest, `"token": "<plain token>"` also works.
+
+2. Build and start:
+
+   ```bash
+   docker build -t openplayx/yt-dlp:local ..
+   mkdir -p ../data ../downloads
+   YTDLP_IMAGE=openplayx/yt-dlp:local APP_UID=$(id -u) APP_GID=$(id -g) \
+     DATA_DIR=../data DOWNLOAD_ROOT=../downloads docker compose up -d
+   ```
+
+   The service listens on `127.0.0.1:18800` (`BIND` and `PORT` change it);
+   downloaded files land in `downloads/`.
+
+3. Check it:
+
+   ```bash
+   curl -s http://127.0.0.1:18800/readyz
+   curl -s -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+     -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"get_status","arguments":{}}}' \
+     http://127.0.0.1:18800/mcp
+   ```
+
+For anything beyond your own machine or LAN, put an HTTPS reverse proxy in front.
+
+## Configuration
+
+| File | Content |
+|---|---|
+| `config.json` ([example](deploy/config.example.json)) | listen address, storage paths, limits (`max_task_bytes`, `min_free_bytes`, `max_duration_seconds`, concurrency, rate limit), network policy (`allow_private_addresses`, `allowed_extractors`, `allow_generic_extractor`, `proxy_ref`) |
+| `secrets.json` ([example](deploy/secrets.example.json)) | tokens (name, `token` or `token_sha256`, scopes `read` / `download`), optional proxy URLs referenced by `proxy_ref` |
+
+`secrets.json` and `config.json` are git-ignored.
+
+## Using it from an MCP client
+
+Any client that speaks Streamable HTTP with a bearer token works. For example:
+
+```json
+{
+  "mcpServers": {
+    "yt-dlp": {
+      "type": "http",
+      "url": "http://127.0.0.1:18800/mcp",
+      "headers": { "Authorization": "Bearer <token>" }
+    }
+  }
+}
+```
+
+In OpenPlayX, add it under **AI → 外部能力** with the service root URL and the token.
+
 ## Develop
 
 ```bash
+uv sync --all-groups
 scripts/check.sh        # ruff + tests (fake engine, no network)
 uv run openplayx-yt-dlp --config deploy/config.json --secrets deploy/secrets.json
 ```
 
-Configuration: `deploy/config.example.json` (no credentials) and
-`deploy/secrets.example.json` (token SHA-256 digests, optional proxy URLs).
+`scripts/deploy-211.sh` is the maintainers' helper for building and running a
+committed revision on a remote Docker host over SSH (`DEPLOY_HOST`, `BIND`).
+yt-dlp version and update procedure: [UPSTREAM.md](UPSTREAM.md).
 
-Deployment on the 211 test host: [docs/deploy-211.md](docs/deploy-211.md).
-Upstream version: [UPSTREAM.md](UPSTREAM.md).
+## Contributing
+
+Issues and pull requests are welcome, see [CONTRIBUTING.md](CONTRIBUTING.md).
+Report security problems privately as described in [SECURITY.md](SECURITY.md).
+
+## Disclaimer
+
+You are responsible for what you download. Only download content you have the
+right to download, and follow the terms of service of the sites involved and
+the copyright law that applies to you. This project does not host or
+distribute any media, and it is not affiliated with yt-dlp or any site.
+
+## License
+
+[MIT](LICENSE). yt-dlp is a separate dependency under The Unlicense; ffmpeg in
+the Docker image is the Debian package under its own licenses.

@@ -3,6 +3,7 @@ name = "openplayx-yt-dlp"
 version = "0.1.0"
 description = "OpenPlayX MCP service wrapping yt-dlp: inspect media URLs and download them on the server"
 readme = "README.md"
+license = "MIT"
 requires-python = ">=3.12"
 dependencies = [
     # Pinned upstream; the exact build is locked in uv.lock (see UPSTREAM.md).

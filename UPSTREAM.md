@@ -11,6 +11,7 @@ yt-dlp is used as an unmodified dependency, not copied into this tree.
 | ffmpeg | Debian bookworm package in the image |
 
 Updating: change the pin in `pyproject.toml`, run `uv lock`, run
-`scripts/check.sh`, redeploy and repeat the smoke test in
-`docs/deploy-211.md`. Sites change often, so expect to bump yt-dlp regularly;
-the image never self-updates.
+`scripts/check.sh`, redeploy, then call `get_media_info` and a small
+`start_download` against a real video (see the README quick start).
+Sites change often, so expect to bump yt-dlp regularly; the image never
+self-updates.
