@@ -122,8 +122,6 @@ scripts/check.sh        # ruff + tests (fake engine, no network)
 uv run openplayx-yt-dlp --config deploy/config.json --secrets deploy/secrets.json
 ```
 
-`scripts/deploy-211.sh` is the maintainers' helper for building and running a
-committed revision on a remote Docker host over SSH (`DEPLOY_HOST`, `BIND`).
 yt-dlp version and update procedure: [UPSTREAM.md](UPSTREAM.md).
 
 ## Contributing
