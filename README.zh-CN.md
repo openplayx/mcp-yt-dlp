@@ -32,7 +32,7 @@
 - 单任务大小上限（`max_task_bytes`）：入队前按预估大小检查，下载过程中按实际写入的字节数检查。
 - 空闲空间保留（`min_free_bytes`）：入队前检查，下载过程中每 2 秒检查一次。
 - 只接受公网 http(s) 链接（不能带凭据，除非开启 `allow_private_addresses`，否则不允许私有/回环地址）。yt-dlp 自己会跟随重定向并请求其他地址；可以设置 `allow_generic_extractor: false` 或 `allowed_extractors`，把范围限制在已知网站。
-- 任务不会在重启后保留：运行中的任务变为 `interrupted`，未完成的文件被删除。
+- 重启后不会恢复执行任务：排队中/运行中的任务变为 `interrupted`，未完成的文件被删除。
 
 ## 快速开始
 

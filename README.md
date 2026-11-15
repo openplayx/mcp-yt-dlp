@@ -47,7 +47,7 @@ streams, cookies/logins, `yt-dlp -U` self-update.
   unless `allow_private_addresses`). yt-dlp itself follows redirects and
   fetches further URLs; set `allow_generic_extractor: false` or
   `allowed_extractors` to limit it to known sites.
-- Jobs do not survive a restart: running ones become `interrupted` and
+- Jobs are not resumed after a restart: queued/running ones become `interrupted` and
   their partial files are removed.
 
 ## Quick start
