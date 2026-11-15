@@ -1,12 +1,7 @@
-__pycache__/
-*.py[cod]
-.venv/
-.pytest_cache/
-.ruff_cache/
-dist/
-build/
-*.egg-info/
+/dist/
 /data/
+/downloads/
+/mcp-yt-dlp
 /deploy/secrets.json
 /deploy/config.json
 /deploy/.env

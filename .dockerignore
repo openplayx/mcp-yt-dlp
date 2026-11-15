@@ -1,9 +1,6 @@
 .git
-.venv
 data
-tests
-**/__pycache__
-.pytest_cache
-.ruff_cache
+dist
+downloads
 deploy/secrets.json
 deploy/config.json

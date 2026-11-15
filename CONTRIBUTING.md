@@ -18,7 +18,7 @@ Thanks for your interest. Bug reports, fixes and small improvements are welcome.
 3. Add or update tests, and run the checks before pushing:
 
    ```bash
-   scripts/check.sh              # ruff + tests (fake engine, no network)
+   scripts/check.sh              # gofmt, go vet, tests (fake engine, no network)
    ```
 
 4. Update the README in both languages (`README.md` and `README.zh-CN.md`)

@@ -1,10 +1,15 @@
 #!/usr/bin/env bash
-# Offline checks used locally and by CI: lint, format check and tests (the
-# tests use a fake engine; they never touch the network).
+# Offline checks used locally and by CI: formatting, vet and tests (the
+# server tests use a fake engine and never touch the network). Set YTDLP_BIN
+# to also run the integration test against a real yt-dlp and a local server.
 set -euo pipefail
 cd "$(dirname "$0")/.."
-uv sync --frozen --all-groups
-uv run ruff check src tests
-uv run ruff format --check src tests
-uv run pytest -q
+unformatted="$(gofmt -l .)"
+if [ -n "$unformatted" ]; then
+  echo "gofmt needed:" >&2
+  echo "$unformatted" >&2
+  exit 1
+fi
+go vet ./...
+go test -race -count=1 ./...
 echo "all checks passed"

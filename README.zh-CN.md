@@ -4,10 +4,10 @@
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-[OpenPlayX](https://github.com/openplayx/openplayx) 的外部服务，把 [yt-dlp](https://github.com/yt-dlp/yt-dlp) 封装成 MCP 服务：先查看视频链接的信息，再按选定的画质在服务器后台下载。
+[OpenPlayX](https://github.com/openplayx/openplayx) 的外部服务，把 [yt-dlp](https://github.com/yt-dlp/yt-dlp) 封装成 MCP 服务：先查看视频链接的信息，再按选定的画质在服务器后台下载。服务是一个 Go 程序，调用固定版本的 yt-dlp 可执行文件；客户端无法直接传入 yt-dlp 参数。
 
 - MCP 走 Streamable HTTP，端点 `POST /mcp`（无状态 JSON-RPC，Bearer token），与其他 OpenPlayX MCP 服务支持的子集相同。OpenPlayX 会从服务根地址探测 `/mcp`，所以 App 里只需填根地址和 token。
-- `/healthz`（存活检查）和 `/readyz`（下载目录可写、ffmpeg 和 JS 运行时就绪）不需要 token。
+- `/healthz`（存活检查）和 `/readyz`（下载目录可写、yt-dlp、ffmpeg 和 JS 运行时就绪）不需要 token。
 
 ## 工具
 
@@ -36,7 +36,7 @@
 
 ## 快速开始
 
-依赖：Docker；本地开发需要 Python 3.12、[uv](https://docs.astral.sh/uv/) 和 ffmpeg。
+依赖：Docker。本地开发需要 Go 1.26；要在本机运行服务，`PATH` 里还要有 yt-dlp、ffmpeg 和 deno。
 
 1. 生成 token 和配置：
 
@@ -44,7 +44,7 @@
    cd deploy
    cp config.example.json config.json
    cp secrets.example.json secrets.json
-   TOKEN=$(python3 -c 'import secrets; print(secrets.token_urlsafe(32))')
+   TOKEN=$(openssl rand -hex 32)
    printf '%s' "$TOKEN" | shasum -a 256   # 把摘要填进 secrets.json 的 token_sha256
    ```
 
@@ -102,10 +102,12 @@
 ## 开发
 
 ```bash
-uv sync --all-groups
-scripts/check.sh        # ruff + 测试（模拟引擎，不联网）
-uv run openplayx-yt-dlp --config deploy/config.json --secrets deploy/secrets.json
+scripts/check.sh        # gofmt、go vet、测试（模拟引擎，不联网）
+YTDLP_BIN=$(command -v yt-dlp) scripts/check.sh   # 另外用真实 yt-dlp 跑一次本地集成测试
+go run ./cmd/mcp-yt-dlp --config deploy/config.json --secrets deploy/secrets.json
 ```
+
+`YTDLP_BIN` 指定 yt-dlp 可执行文件（默认用 `PATH` 里的 `yt-dlp`）。
 
 yt-dlp 的版本和升级步骤见 [UPSTREAM.md](UPSTREAM.md)（英文）。
 
@@ -119,4 +121,4 @@ yt-dlp 的版本和升级步骤见 [UPSTREAM.md](UPSTREAM.md)（英文）。
 
 ## 许可证
 
-[MIT](LICENSE)。yt-dlp 是独立的依赖，采用 The Unlicense；Docker 镜像中的 ffmpeg 是 Debian 软件包，遵循其自身的许可证。
+[MIT](LICENSE)。yt-dlp 是独立的程序，采用 The Unlicense；Docker 镜像中的 ffmpeg 和 deno 遵循各自的许可证。

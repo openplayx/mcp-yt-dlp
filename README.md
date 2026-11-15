@@ -6,12 +6,13 @@ English | [简体中文](README.zh-CN.md)
 
 An [OpenPlayX](https://github.com/openplayx/openplayx) external service that
 wraps [yt-dlp](https://github.com/yt-dlp/yt-dlp) as an MCP server: inspect a video URL, then download it to the server in the
-background at a chosen quality.
+background at a chosen quality. The service is a single Go binary that runs
+the pinned yt-dlp executable; clients never reach yt-dlp options directly.
 
 - MCP over Streamable HTTP at `POST /mcp` (stateless JSON-RPC, bearer token),
   the same subset as the other OpenPlayX MCP services. OpenPlayX probes `/mcp`
   from the service root, so the App only needs the root URL and the token.
-- `/healthz` (liveness) and `/readyz` (download folder writable, ffmpeg and
+- `/healthz` (liveness) and `/readyz` (download folder writable, yt-dlp, ffmpeg and
   the JS runtime present) need no token.
 
 ## Tools
@@ -51,8 +52,8 @@ streams, cookies/logins, `yt-dlp -U` self-update.
 
 ## Quick start
 
-Requirements: Docker, or Python 3.12 with [uv](https://docs.astral.sh/uv/)
-and ffmpeg for local development.
+Requirements: Docker. For local development: Go 1.26, plus yt-dlp, ffmpeg
+and deno on `PATH` to run the service itself.
 
 1. Create a token and the configuration:
 
@@ -60,7 +61,7 @@ and ffmpeg for local development.
    cd deploy
    cp config.example.json config.json
    cp secrets.example.json secrets.json
-   TOKEN=$(python3 -c 'import secrets; print(secrets.token_urlsafe(32))')
+   TOKEN=$(openssl rand -hex 32)
    printf '%s' "$TOKEN" | shasum -a 256   # put the digest into secrets.json → token_sha256
    ```
 
@@ -119,10 +120,12 @@ In OpenPlayX, add it under **AI → 外部能力** with the service root URL and
 ## Develop
 
 ```bash
-uv sync --all-groups
-scripts/check.sh        # ruff + tests (fake engine, no network)
-uv run openplayx-yt-dlp --config deploy/config.json --secrets deploy/secrets.json
+scripts/check.sh        # gofmt, go vet, tests (fake engine, no network)
+YTDLP_BIN=$(command -v yt-dlp) scripts/check.sh   # also a real yt-dlp against a local server
+go run ./cmd/mcp-yt-dlp --config deploy/config.json --secrets deploy/secrets.json
 ```
+
+`YTDLP_BIN` selects the yt-dlp executable (default: `yt-dlp` on `PATH`).
 
 yt-dlp version and update procedure: [UPSTREAM.md](UPSTREAM.md).
 
@@ -140,5 +143,5 @@ distribute any media, and it is not affiliated with yt-dlp or any site.
 
 ## License
 
-[MIT](LICENSE). yt-dlp is a separate dependency under The Unlicense; ffmpeg in
-the Docker image is the Debian package under its own licenses.
+[MIT](LICENSE). yt-dlp is a separate program under The Unlicense; ffmpeg and
+deno in the Docker image keep their own licenses.
