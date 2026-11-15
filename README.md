@@ -1,9 +1,11 @@
 # mcp-yt-dlp
 
+English | [简体中文](README.zh-CN.md)
+
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-An [OpenPlayX](https://github.com/openplayx/openplayx) external service that wraps [yt-dlp](https://github.com/yt-dlp/yt-dlp)
-as an MCP server: inspect a video URL, then download it to the server in the
+An [OpenPlayX](https://github.com/openplayx/openplayx) external service that
+wraps [yt-dlp](https://github.com/yt-dlp/yt-dlp) as an MCP server: inspect a video URL, then download it to the server in the
 background at a chosen quality.
 
 - MCP over Streamable HTTP at `POST /mcp` (stateless JSON-RPC, bearer token),
