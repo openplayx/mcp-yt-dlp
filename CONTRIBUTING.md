@@ -5,9 +5,9 @@ Thanks for your interest. Bug reports, fixes and small improvements are welcome.
 ## Issues
 
 - Search existing issues first.
-- For bugs, include the version or commit, how you run it (binary, Docker,
-  stdio), the request you sent and the response or log you got. Remove tokens
-  and private addresses before posting.
+- For bugs, include the version or commit, how you run it (binary or Docker),
+  the request you sent and the response or log you got. Remove tokens and
+  private addresses before posting.
 - Security problems: do **not** open a public issue, see [SECURITY.md](SECURITY.md).
 
 ## Pull requests

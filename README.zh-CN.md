@@ -111,6 +111,15 @@ go run ./cmd/mcp-yt-dlp --config deploy/config.json --secrets deploy/secrets.jso
 
 yt-dlp 的版本和升级步骤见 [UPSTREAM.md](UPSTREAM.md)（英文）。
 
+## 从 Python 服务迁移
+
+重新构建镜像并重建容器，沿用现有 Compose 文件、配置、token、数据目录和下载目录。
+MCP 工具、端口和 SQLite 任务数据结构保持兼容。任务记录和已完成的文件会保留；
+排队中或运行中的任务在重启后变为 `interrupted`，未完成的文件会被清理，需要手动重新提交下载。
+
+Go 服务通过子进程调用 yt-dlp。本地部署需要 Go 和上面列出的外部工具，Docker 镜像已包含这些依赖。
+文件收集只包含已完成的输出及其带语言标签的附属文件，因此新任务不会再把另一预设的输出列为附属文件或一并删除。
+
 ## 参与贡献
 
 欢迎提 issue 和 PR，见 [CONTRIBUTING.md](CONTRIBUTING.md)（英文）。安全问题请按 [SECURITY.md](SECURITY.md)（英文）私下报告。

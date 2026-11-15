@@ -129,6 +129,19 @@ go run ./cmd/mcp-yt-dlp --config deploy/config.json --secrets deploy/secrets.jso
 
 yt-dlp version and update procedure: [UPSTREAM.md](UPSTREAM.md).
 
+## Migrating from the Python service
+
+Rebuild the image and recreate the container with the existing Compose file,
+configuration, tokens, data directory and download directory. The MCP tools,
+ports and SQLite job schema stay compatible. Job records and completed
+files remain available; queued or running jobs become `interrupted` on
+restart and partial files are removed. Submit those downloads again explicitly.
+
+The Go service runs yt-dlp as a subprocess. A local deployment now needs
+Go plus the external tools listed above; Docker bundles them. File collection
+includes the completed output and its language-tagged sidecars, so another
+preset's output is no longer listed or deleted as a sidecar of a new job.
+
 ## Contributing
 
 Issues and pull requests are welcome, see [CONTRIBUTING.md](CONTRIBUTING.md).

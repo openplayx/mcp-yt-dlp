@@ -5,3 +5,7 @@
 /deploy/secrets.json
 /deploy/config.json
 /deploy/.env
+
+# Bytecode left by the previous Python implementation.
+__pycache__/
+*.py[cod]
