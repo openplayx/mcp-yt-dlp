@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/openplayx/mcp-yt-dlp/internal/ojson"
+	"github.com/openplayx/mcp-yt-dlp/src/internal/ojson"
 )
 
 type Error struct {

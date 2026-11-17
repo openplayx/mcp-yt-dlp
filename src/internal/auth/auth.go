@@ -12,8 +12,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/openplayx/mcp-yt-dlp/internal/apierr"
-	"github.com/openplayx/mcp-yt-dlp/internal/config"
+	"github.com/openplayx/mcp-yt-dlp/src/internal/apierr"
+	"github.com/openplayx/mcp-yt-dlp/src/internal/config"
 )
 
 type Principal struct {

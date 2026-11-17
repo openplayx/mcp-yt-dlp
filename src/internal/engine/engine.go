@@ -23,8 +23,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/openplayx/mcp-yt-dlp/internal/config"
-	"github.com/openplayx/mcp-yt-dlp/internal/media"
+	"github.com/openplayx/mcp-yt-dlp/src/internal/config"
+	"github.com/openplayx/mcp-yt-dlp/src/internal/media"
 )
 
 // Outtmpl is the output template, relative to the download root.

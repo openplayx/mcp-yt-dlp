@@ -7,13 +7,13 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/openplayx/mcp-yt-dlp/internal/apierr"
-	"github.com/openplayx/mcp-yt-dlp/internal/config"
-	"github.com/openplayx/mcp-yt-dlp/internal/engine"
-	"github.com/openplayx/mcp-yt-dlp/internal/jobs"
-	"github.com/openplayx/mcp-yt-dlp/internal/media"
-	"github.com/openplayx/mcp-yt-dlp/internal/netguard"
-	"github.com/openplayx/mcp-yt-dlp/internal/ojson"
+	"github.com/openplayx/mcp-yt-dlp/src/internal/apierr"
+	"github.com/openplayx/mcp-yt-dlp/src/internal/config"
+	"github.com/openplayx/mcp-yt-dlp/src/internal/engine"
+	"github.com/openplayx/mcp-yt-dlp/src/internal/jobs"
+	"github.com/openplayx/mcp-yt-dlp/src/internal/media"
+	"github.com/openplayx/mcp-yt-dlp/src/internal/netguard"
+	"github.com/openplayx/mcp-yt-dlp/src/internal/ojson"
 )
 
 type Service struct {

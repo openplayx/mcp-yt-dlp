@@ -104,7 +104,7 @@
 ```bash
 scripts/check.sh        # gofmt、go vet、测试（模拟引擎，不联网）
 YTDLP_BIN=$(command -v yt-dlp) scripts/check.sh   # 另外用真实 yt-dlp 跑一次本地集成测试
-go run ./cmd/mcp-yt-dlp --config deploy/config.json --secrets deploy/secrets.json
+go run ./src/cmd/mcp-yt-dlp --config deploy/config.json --secrets deploy/secrets.json
 ```
 
 `YTDLP_BIN` 指定 yt-dlp 可执行文件（默认用 `PATH` 里的 `yt-dlp`）。

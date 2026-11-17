@@ -122,7 +122,7 @@ In OpenPlayX, add it under **AI → 外部能力** with the service root URL and
 ```bash
 scripts/check.sh        # gofmt, go vet, tests (fake engine, no network)
 YTDLP_BIN=$(command -v yt-dlp) scripts/check.sh   # also a real yt-dlp against a local server
-go run ./cmd/mcp-yt-dlp --config deploy/config.json --secrets deploy/secrets.json
+go run ./src/cmd/mcp-yt-dlp --config deploy/config.json --secrets deploy/secrets.json
 ```
 
 `YTDLP_BIN` selects the yt-dlp executable (default: `yt-dlp` on `PATH`).

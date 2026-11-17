@@ -7,14 +7,14 @@ import (
 )
 
 func TestExamplesAreValid(t *testing.T) {
-	data, err := os.ReadFile("../../deploy/config.example.json")
+	data, err := os.ReadFile("../../../deploy/config.example.json")
 	if err != nil {
 		t.Fatal(err)
 	}
 	if _, err := Parse(data); err != nil {
 		t.Fatal(err)
 	}
-	data, _ = os.ReadFile("../../deploy/secrets.example.json")
+	data, _ = os.ReadFile("../../../deploy/secrets.example.json")
 	if _, err := ParseSecrets(data); err != nil {
 		t.Fatal(err)
 	}

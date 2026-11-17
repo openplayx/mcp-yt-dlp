@@ -13,7 +13,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/openplayx/mcp-yt-dlp/internal/config"
+	"github.com/openplayx/mcp-yt-dlp/src/internal/config"
 )
 
 func TestParseLine(t *testing.T) {

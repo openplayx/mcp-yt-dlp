@@ -19,12 +19,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/openplayx/mcp-yt-dlp/internal/auth"
-	"github.com/openplayx/mcp-yt-dlp/internal/config"
-	"github.com/openplayx/mcp-yt-dlp/internal/engine"
-	"github.com/openplayx/mcp-yt-dlp/internal/jobs"
-	"github.com/openplayx/mcp-yt-dlp/internal/media"
-	"github.com/openplayx/mcp-yt-dlp/internal/service"
+	"github.com/openplayx/mcp-yt-dlp/src/internal/auth"
+	"github.com/openplayx/mcp-yt-dlp/src/internal/config"
+	"github.com/openplayx/mcp-yt-dlp/src/internal/engine"
+	"github.com/openplayx/mcp-yt-dlp/src/internal/jobs"
+	"github.com/openplayx/mcp-yt-dlp/src/internal/media"
+	"github.com/openplayx/mcp-yt-dlp/src/internal/service"
 )
 
 var (

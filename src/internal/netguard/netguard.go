@@ -19,7 +19,7 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/openplayx/mcp-yt-dlp/internal/apierr"
+	"github.com/openplayx/mcp-yt-dlp/src/internal/apierr"
 )
 
 const MaxURLLength = 2048

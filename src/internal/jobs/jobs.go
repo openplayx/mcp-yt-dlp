@@ -27,10 +27,10 @@ import (
 
 	_ "modernc.org/sqlite"
 
-	"github.com/openplayx/mcp-yt-dlp/internal/apierr"
-	"github.com/openplayx/mcp-yt-dlp/internal/config"
-	"github.com/openplayx/mcp-yt-dlp/internal/engine"
-	"github.com/openplayx/mcp-yt-dlp/internal/ojson"
+	"github.com/openplayx/mcp-yt-dlp/src/internal/apierr"
+	"github.com/openplayx/mcp-yt-dlp/src/internal/config"
+	"github.com/openplayx/mcp-yt-dlp/src/internal/engine"
+	"github.com/openplayx/mcp-yt-dlp/src/internal/ojson"
 )
 
 var (

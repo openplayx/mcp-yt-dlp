@@ -7,10 +7,9 @@ FROM golang:1.26-bookworm AS build
 WORKDIR /src
 COPY go.mod go.sum ./
 RUN go mod download
-COPY cmd ./cmd
-COPY internal ./internal
+COPY src ./src
 ARG VERSION=dev
-RUN CGO_ENABLED=0 go build -trimpath -ldflags "-s -w -X main.version=${VERSION}" -o /out/mcp-yt-dlp ./cmd/mcp-yt-dlp
+RUN CGO_ENABLED=0 go build -trimpath -ldflags "-s -w -X main.version=${VERSION}" -o /out/mcp-yt-dlp ./src/cmd/mcp-yt-dlp
 
 FROM debian:bookworm-slim AS ytdlp
 ARG TARGETARCH

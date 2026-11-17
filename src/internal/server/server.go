@@ -30,11 +30,11 @@ import (
 	"time"
 	"unicode"
 
-	"github.com/openplayx/mcp-yt-dlp/internal/apierr"
-	"github.com/openplayx/mcp-yt-dlp/internal/auth"
-	"github.com/openplayx/mcp-yt-dlp/internal/media"
-	"github.com/openplayx/mcp-yt-dlp/internal/ojson"
-	"github.com/openplayx/mcp-yt-dlp/internal/service"
+	"github.com/openplayx/mcp-yt-dlp/src/internal/apierr"
+	"github.com/openplayx/mcp-yt-dlp/src/internal/auth"
+	"github.com/openplayx/mcp-yt-dlp/src/internal/media"
+	"github.com/openplayx/mcp-yt-dlp/src/internal/ojson"
+	"github.com/openplayx/mcp-yt-dlp/src/internal/service"
 )
 
 var ProtocolVersions = []string{"2025-11-25", "2025-06-18", "2025-03-26"}
