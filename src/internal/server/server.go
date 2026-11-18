@@ -276,7 +276,13 @@ var tools = []tool{
 	{
 		name: "get_download", title: "Download progress", scope: "read", readOnly: true,
 		description: "State, progress, resulting files (paths relative to the download " +
-			"folder, sizes) and error of one job. Read-only.",
+			"folder, sizes) and error of one job. During downloads, progress.scope is " +
+			"current_stream and stream_index identifies the stream (1-based); percent, " +
+			"downloaded_bytes, total_bytes and eta_seconds all refer to that stream. " +
+			"overall_downloaded_bytes is cumulative. Show approximate sizes when " +
+			"total_bytes_estimated is true; estimates may change. ETA is estimated " +
+			"from remaining bytes / speed_bps. Null means unknown. estimated_bytes " +
+			"is the initial job estimate, not the progress denominator. Read-only.",
 		schema: object(ojson.New("job_id", jobProp), "job_id"),
 		run: func(ctx context.Context, s *Server, who auth.Principal, a *args) (any, *apierr.Error) {
 			return s.svc.Get(a.vals["job_id"].(string))

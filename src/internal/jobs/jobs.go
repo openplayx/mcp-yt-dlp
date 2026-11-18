@@ -102,16 +102,22 @@ func ptrOrNil[T any](p *T) any {
 // View is the job as clients see it. Call with the manager lock held.
 func (j *Job) View() *ojson.Object {
 	p := j.Progress.Clone()
-	done, _ := p.Get("downloaded_bytes")
 	if isFinal(j.State) {
 		p.Set("phase", j.State)
 		p.Delete("speed_bps")
 		p.Delete("eta_seconds")
+		p.Delete("eta_estimated")
 	}
 	if j.State == "completed" {
+		if done, ok := p.Get("overall_downloaded_bytes"); ok {
+			p.Set("scope", "overall")
+			p.Delete("stream_index")
+			p.Set("downloaded_bytes", done)
+			p.Set("total_bytes", done)
+			p.Set("current_total_bytes", done)
+			p.Set("total_bytes_estimated", false)
+		}
 		p.Set("percent", 100.0)
-	} else if d := num(done); d > 0 && j.EstimatedBytes != nil && *j.EstimatedBytes > 0 {
-		p.Set("percent", math.Round(math.Min(99.9, d*100/float64(*j.EstimatedBytes))*10)/10)
 	}
 	files := j.Files
 	if files == nil {
@@ -141,18 +147,6 @@ func (j *Job) View() *ojson.Object {
 		"files", files,
 		"error", jerr,
 	)
-}
-
-func num(v any) float64 {
-	switch t := v.(type) {
-	case float64:
-		return t
-	case int64:
-		return float64(t)
-	case int:
-		return float64(t)
-	}
-	return 0
 }
 
 // ---- store -----------------------------------------------------------------
@@ -682,6 +676,7 @@ func (m *Manager) safeDownload(j *Job, spec engine.DownloadSpec) (paths []string
 
 func (m *Manager) progressFunc(j *Job) engine.ProgressFunc {
 	perFile := map[string]int64{}
+	streamIndices := map[string]int{}
 	var lastSave, lastDisk float64
 	return func(d engine.Progress) error {
 		m.mu.Lock()
@@ -690,8 +685,11 @@ func (m *Manager) progressFunc(j *Job) engine.ProgressFunc {
 		if canceled {
 			return &engine.Abort{Code: "canceled", Message: "Canceled by request."}
 		}
-		if d.Filename != "" && d.DownloadedBytes != nil {
+		if d.DownloadedBytes != nil {
 			perFile[d.Filename] = *d.DownloadedBytes
+			if _, ok := streamIndices[d.Filename]; !ok {
+				streamIndices[d.Filename] = len(streamIndices) + 1
+			}
 		}
 		var total int64
 		for _, n := range perFile {
@@ -709,16 +707,42 @@ func (m *Manager) progressFunc(j *Job) engine.ProgressFunc {
 					"Stopped: free space fell to %d bytes, below the %d-byte reserve.", free, m.limits.MinFreeBytes)}
 			}
 		}
-		var speed any
-		if d.Speed != nil && *d.Speed != 0 {
+		// All displayed measurements describe the current stream. The aggregate
+		// is kept separately for limits; later streams' sizes are not yet known.
+		p := ojson.New("phase", d.Phase, "scope", "current_stream",
+			"stream_index", streamIndices[d.Filename],
+			"downloaded_bytes", ptrOrNil(d.DownloadedBytes),
+			"overall_downloaded_bytes", total,
+			"total_bytes", nil, "current_total_bytes", nil,
+			"total_bytes_estimated", false, "percent", nil,
+			"speed_bps", nil, "eta_seconds", nil, "eta_estimated", false)
+		var speed int64
+		if d.Phase == "downloading" && d.Speed != nil && *d.Speed > 0 {
 			speed = int64(*d.Speed)
+			if speed > 0 {
+				p.Set("speed_bps", speed)
+			}
 		}
-		var phase any
-		if d.Phase != "" {
-			phase = d.Phase
+		if d.TotalBytes != nil && *d.TotalBytes > 0 && d.DownloadedBytes != nil &&
+			*d.DownloadedBytes >= 0 && *d.DownloadedBytes <= *d.TotalBytes {
+			p.Set("total_bytes", *d.TotalBytes)
+			p.Set("current_total_bytes", *d.TotalBytes)
+			p.Set("total_bytes_estimated", d.TotalBytesEstimated)
+			p.Set("percent", math.Round(float64(*d.DownloadedBytes)*1000/float64(*d.TotalBytes))/10)
+			if speed > 0 {
+				p.Set("eta_seconds", math.Ceil(float64(*d.TotalBytes-*d.DownloadedBytes)/float64(speed)))
+				p.Set("eta_estimated", true)
+			}
 		}
-		p := ojson.New("phase", phase, "downloaded_bytes", total,
-			"current_total_bytes", ptrOrNil(d.TotalBytes), "speed_bps", speed, "eta_seconds", d.ETA)
+		if d.Phase == "postprocessing" {
+			m.mu.Lock()
+			p = j.Progress.Clone()
+			m.mu.Unlock()
+			p.Set("phase", d.Phase)
+			p.Set("speed_bps", nil)
+			p.Set("eta_seconds", nil)
+			p.Set("eta_estimated", false)
+		}
 		if d.Postprocessor != "" {
 			p.Set("postprocessor", d.Postprocessor)
 		}

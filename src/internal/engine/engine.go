@@ -55,13 +55,14 @@ type DownloadSpec struct {
 
 // Progress is one progress report from a running download.
 type Progress struct {
-	Phase           string // downloading, downloaded, postprocessing
-	Filename        string
-	DownloadedBytes *int64
-	TotalBytes      *int64
-	Speed           *float64
-	ETA             any
-	Postprocessor   string
+	Phase               string // downloading, downloaded, postprocessing
+	Filename            string
+	DownloadedBytes     *int64
+	TotalBytes          *int64
+	TotalBytesEstimated bool
+	Speed               *float64
+	ETA                 any
+	Postprocessor       string
 }
 
 // ProgressFunc receives progress; a non-nil error (normally *Abort) stops
@@ -318,11 +319,19 @@ func ParseLine(line string) (p *Progress, file string) {
 			phase = "downloaded"
 		}
 		total := j.TotalBytes
-		if total == nil || *total == 0 {
+		estimated := false
+		if total == nil || *total <= 0 {
 			total = j.TotalBytesEstimate
+			estimated = total != nil && *total > 0
+		}
+		if phase == "downloaded" && j.DownloadedBytes != nil {
+			total, estimated = j.DownloadedBytes, false
+		}
+		if total != nil && *total <= 0 {
+			total, estimated = nil, false
 		}
 		return &Progress{Phase: phase, Filename: j.Filename, DownloadedBytes: toInt(j.DownloadedBytes),
-			TotalBytes: toInt(total), Speed: j.Speed, ETA: j.ETA}, ""
+			TotalBytes: toInt(total), TotalBytesEstimated: estimated, Speed: j.Speed, ETA: j.ETA}, ""
 	case strings.HasPrefix(line, tagPost):
 		name, status, _ := strings.Cut(line[len(tagPost):], " ")
 		if status == "started" {

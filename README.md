@@ -37,6 +37,26 @@ yt-dlp options.
 Not supported on purpose: whole playlists (one download per entry URL), live
 streams, cookies/logins, `yt-dlp -U` self-update.
 
+### Download progress
+
+While downloading, `progress.scope: "current_stream"` and the 1-based
+`stream_index` identify the current stream (video/audio/subtitles in order of
+first observation; the stream count is unknown). `downloaded_bytes`,
+`total_bytes` (also returned as `current_total_bytes` for compatibility),
+`percent` (0–100) and `eta_seconds` all describe that stream. A stream reaching
+100% does not mean the job is complete: check `state` and `phase`.
+`overall_downloaded_bytes` separately accumulates all streams for the size limit.
+
+`total_bytes_estimated: true` means clients should display the size as approximate
+(e.g. “about”); fragment estimates and the resulting percent/ETA can change.
+If the total is unknown or smaller than the bytes already downloaded, total,
+percent and ETA are null. ETA is rounded up from remaining bytes / `speed_bps`,
+marked `eta_estimated: true`, and is null without a usable speed or during
+postprocessing. Completed jobs report overall transferred bytes, an exact total
+and 100%; output file sizes remain in `files` and may differ after merging.
+The job's top-level `estimated_bytes` is only the initial probe estimate and
+must not be used to calculate download progress.
+
 ## Limits and safety
 
 - Per job size cap (`max_task_bytes`), checked against the estimate before

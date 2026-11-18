@@ -18,11 +18,11 @@ import (
 
 func TestParseLine(t *testing.T) {
 	p, f := ParseLine(`[opx] {"status": "downloading", "downloaded_bytes": 1024, "total_bytes": null, "total_bytes_estimate": 4096.5, "filename": "/t/a.mp4", "speed": 12.5, "eta": 3}`)
-	if p == nil || f != "" || p.Phase != "downloading" || *p.DownloadedBytes != 1024 || *p.TotalBytes != 4096 || p.Filename != "/t/a.mp4" {
+	if p == nil || f != "" || p.Phase != "downloading" || *p.DownloadedBytes != 1024 || *p.TotalBytes != 4096 || p.Filename != "/t/a.mp4" || !p.TotalBytesEstimated {
 		t.Fatalf("%+v", p)
 	}
 	p, _ = ParseLine(`[opx] {"status": "finished", "downloaded_bytes": 10, "total_bytes": 10, "filename": "x"}`)
-	if p.Phase != "downloaded" {
+	if p.Phase != "downloaded" || p.TotalBytesEstimated {
 		t.Fatal(p.Phase)
 	}
 	p, _ = ParseLine("[opx-pp] Merger started")
@@ -37,6 +37,38 @@ func TestParseLine(t *testing.T) {
 	}
 	if p, f := ParseLine("[download] something"); p != nil || f != "" {
 		t.Fatal("unrelated line")
+	}
+}
+
+func TestProgressTotalSource(t *testing.T) {
+	for _, tc := range []struct {
+		name      string
+		payload   string
+		total     int64
+		estimated bool
+	}{
+		{"exact preferred", `{"total_bytes":100,"total_bytes_estimate":200}`, 100, false},
+		{"zero exact uses estimate", `{"total_bytes":0,"total_bytes_estimate":200}`, 200, true},
+		{"unknown", `{"total_bytes":null,"total_bytes_estimate":null}`, 0, false},
+		{"zero estimate", `{"total_bytes_estimate":0}`, 0, false},
+		{"finished corrects estimate", `{"status":"finished","downloaded_bytes":150,"total_bytes_estimate":200}`, 150, false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			p, _ := ParseLine("[opx] " + tc.payload)
+			if p == nil {
+				t.Fatal("missing progress")
+			}
+			if tc.total == 0 {
+				if p.TotalBytes != nil {
+					t.Fatalf("unknown total = %d", *p.TotalBytes)
+				}
+			} else if p.TotalBytes == nil || *p.TotalBytes != tc.total {
+				t.Fatalf("total = %v, want %d", p.TotalBytes, tc.total)
+			}
+			if p.TotalBytesEstimated != tc.estimated {
+				t.Fatalf("estimated = %v, want %v", p.TotalBytesEstimated, tc.estimated)
+			}
+		})
 	}
 }
 

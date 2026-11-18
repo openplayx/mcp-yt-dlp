@@ -27,6 +27,22 @@
 
 有意不支持的功能：整个播放列表（每个条目链接单独下载）、直播、cookies/登录、`yt-dlp -U` 自更新。
 
+### 下载进度
+
+下载过程中，`progress.scope: "current_stream"` 和从 1 开始的 `stream_index`
+标识当前第几路流（视频、音频、字幕按首次出现顺序编号，总路数未知）。
+`downloaded_bytes`、`total_bytes`（兼容字段 `current_total_bytes` 返回同一值）、
+`percent`（0–100）和 `eta_seconds` 均对应当前流。单路达到 100% 不代表任务完成，
+仍需检查 `state` 和 `phase`。`overall_downloaded_bytes` 单独累计各路流的下载字节，
+用于检查任务大小上限。
+
+`total_bytes_estimated: true` 时应将大小显示为“约”；分片估算值以及对应的百分比和 ETA
+可能变化。总大小未知或小于已下载字节时，总大小、百分比和 ETA 返回 null。
+ETA 按剩余字节 / `speed_bps` 向上取整，并标注 `eta_estimated: true`；
+无有效速度或处于后处理阶段时 ETA 为 null。任务完成后返回累计传输字节、精确总大小和
+100%；合并后的输出大小在 `files` 中，可能与传输字节不同。
+任务顶层的 `estimated_bytes` 仅是初始探测估算，不应作为下载进度的计算依据。
+
 ## 限制与安全
 
 - 单任务大小上限（`max_task_bytes`）：入队前按预估大小检查，下载过程中按实际写入的字节数检查。
