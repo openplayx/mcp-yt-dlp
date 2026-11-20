@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"log/slog"
 	"math"
+	"net/http"
 	"os"
 	"path/filepath"
 	"slices"
@@ -119,9 +120,10 @@ func (j *Job) View() *ojson.Object {
 		}
 		p.Set("percent", 100.0)
 	}
-	files := j.Files
-	if files == nil {
-		files = []File{}
+	files := []any{}
+	for index, file := range j.Files {
+		files = append(files, ojson.New("path", file.Path, "bytes", file.Bytes,
+			"download_path", fmt.Sprintf("/files/%s/%d", j.ID, index)))
 	}
 	subs := j.Subtitles
 	if subs == nil {
@@ -404,6 +406,39 @@ func (m *Manager) Get(id string) (*ojson.Object, *apierr.Error) {
 		return nil, apierr.JobNotFound()
 	}
 	return j.View(), nil
+}
+
+// OpenFile opens only a completed job's recorded output. os.Root confines
+// resolution (including symlinks) to the download root, even during renames.
+// The returned descriptor remains valid if the job is subsequently removed.
+func (m *Manager) OpenFile(id string, index int) (*os.File, *apierr.Error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	j, ok := m.jobs[id]
+	if !ok {
+		return nil, apierr.JobNotFound()
+	}
+	if j.State != "completed" {
+		return nil, apierr.New("file_not_ready", http.StatusConflict, "Files are available only after the download completes.")
+	}
+	if index < 0 || index >= len(j.Files) {
+		return nil, apierr.New("file_not_found", http.StatusNotFound, "Unknown file index.")
+	}
+	root, err := os.OpenRoot(m.Root)
+	if err != nil {
+		return nil, apierr.Internal()
+	}
+	defer root.Close()
+	f, err := root.Open(j.Files[index].Path)
+	if err != nil {
+		return nil, apierr.New("file_unavailable", http.StatusNotFound, "The downloaded file is unavailable.")
+	}
+	info, err := f.Stat()
+	if err != nil || !info.Mode().IsRegular() {
+		f.Close()
+		return nil, apierr.New("file_unavailable", http.StatusNotFound, "The downloaded file is unavailable.")
+	}
+	return f, nil
 }
 
 func (m *Manager) sorted() []*Job {

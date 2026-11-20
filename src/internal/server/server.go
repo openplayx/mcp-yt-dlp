@@ -1,4 +1,4 @@
-// Package server serves /healthz, /readyz and the MCP endpoint.
+// Package server serves /healthz, /readyz, authenticated files and MCP.
 //
 // MCP (Streamable HTTP, POST /mcp) uses the same deliberately small subset
 // as the other OpenPlayX MCP services:
@@ -20,12 +20,15 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"slices"
+	"strconv"
 	"strings"
 	"time"
 	"unicode"
@@ -50,7 +53,9 @@ const (
 		"the user's own server. get_media_info inspects a URL without downloading. " +
 		"start_download queues one video at a chosen quality preset and returns a " +
 		"job_id; downloads run in the background, so poll get_download for " +
-		"progress. Playlists and live streams are not downloaded as a whole. The " +
+		"progress. Completed files include download_path and bytes; clients can fetch " +
+		"them with authenticated HTTP GET/HEAD and Range, without MCP resources/read. " +
+		"Playlists and live streams are not downloaded as a whole. The " +
 		"user must have the right to download the content."
 )
 
@@ -67,6 +72,7 @@ func New(svc *service.Service, a *auth.Authenticator, log *slog.Logger) *Server 
 	s := &Server{svc: svc, auth: a, log: log, mux: http.NewServeMux(), LookPath: exec.LookPath}
 	s.mux.HandleFunc("GET /healthz", s.healthz)
 	s.mux.HandleFunc("GET /readyz", s.readyz)
+	s.mux.HandleFunc("GET /files/{job_id}/{file_index}", s.file)
 	s.mux.HandleFunc("POST /mcp", s.mcp)
 	s.mux.HandleFunc("/mcp", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Allow", "POST")
@@ -111,6 +117,8 @@ type statusWriter struct {
 	status int
 }
 
+func (w *statusWriter) Unwrap() http.ResponseWriter { return w.ResponseWriter }
+
 func (w *statusWriter) WriteHeader(code int) { w.status = code; w.ResponseWriter.WriteHeader(code) }
 
 func writeJSON(w http.ResponseWriter, status int, v any) {
@@ -131,6 +139,52 @@ func writeAPIError(w http.ResponseWriter, r *http.Request, e *apierr.Error) {
 
 func (s *Server) healthz(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, ojson.New("status", "ok", "version", s.svc.Version))
+}
+
+// GET patterns also handle HEAD. ServeContent supplies Range, If-Range,
+// Content-Length and 416 responses without buffering the media in memory.
+func (s *Server) file(w http.ResponseWriter, r *http.Request) {
+	if !originAllowed(r) {
+		writeAPIError(w, r, apierr.Forbidden("Origin not allowed."))
+		return
+	}
+	who, aerr := s.auth.Authenticate(r.Header.Get("Authorization"))
+	if aerr != nil {
+		writeAPIError(w, r, aerr)
+		return
+	}
+	state(r).principal = who.Name
+	if !who.Has("read") {
+		writeAPIError(w, r, apierr.Forbidden("File downloads require read permission."))
+		return
+	}
+	id := r.PathValue("job_id")
+	index, err := strconv.Atoi(r.PathValue("file_index"))
+	if !jobIDPat.MatchString(id) || len(id) > 32 || err != nil || index < 0 {
+		writeAPIError(w, r, apierr.InvalidRequest("Expected a job_id and a non-negative file_index."))
+		return
+	}
+	f, aerr := s.svc.Jobs.OpenFile(id, index)
+	if aerr != nil {
+		writeAPIError(w, r, aerr)
+		return
+	}
+	defer f.Close()
+	info, err := f.Stat()
+	if err != nil {
+		writeAPIError(w, r, apierr.Internal())
+		return
+	}
+	w.Header().Set("Content-Type", "application/octet-stream")
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+	w.Header().Set("Cache-Control", "private, no-store")
+	w.Header().Set("Content-Disposition", "attachment; filename*=UTF-8''"+strings.ReplaceAll(url.QueryEscape(info.Name()), "+", "%20"))
+	w.Header().Set("ETag", fmt.Sprintf(`"%x-%x"`, info.ModTime().UnixNano(), info.Size()))
+	// File transfers may legitimately outlive the MCP server's two-minute
+	// write deadline. Preserve request cancellation, but remove the absolute
+	// deadline for this authenticated streaming response only.
+	_ = http.NewResponseController(w).SetWriteDeadline(time.Time{})
+	http.ServeContent(w, r, info.Name(), info.ModTime(), f)
 }
 
 func writable(dir string) bool {

@@ -23,6 +23,25 @@
 
 所有非只读工具，OpenPlayX 都会先请用户确认。
 
+### 下载文件传输
+
+`get_download` / `list_downloads` 中每个文件都有 `path`、`bytes` 和
+`download_path`，例如 `/files/0123456789abcdef/0`，文件索引从 0 开始。
+将该路径拼接到配置的服务根地址后，保留反向代理的路径前缀。仅已完成的任务
+可取文件；以下接口与 MCP 使用同一个 bearer token，需要 `read` 权限：
+
+- `GET /files/{job_id}/{file_index}`：以流传输任务文件。
+- `HEAD /files/{job_id}/{file_index}`：仅返回响应头，无文件正文。
+- `Range: bytes=<offset>-`：中断后从指定偏移续传；配合 `ETag` / `If-Range`
+  检测文件是否已改变。无效范围返回 HTTP 416。
+
+响应包含 `Content-Length`、`Accept-Ranges: bytes` 及以 RFC 5987 UTF-8
+编码文件名的 `Content-Disposition`。下载根目录以外的文件（含逃逸的符号链接）、
+已丢失的文件和未完成的任务都不会提供下载。与 MCP 任务列表一致，所有具有
+`read` 权限的 token 都可读取已完成任务。不使用 MCP `resources/read` 或
+base64 JSON 传输。客户端须将请求限制在已配置的服务地址，不能通过重定向
+将 bearer token 发到其他地址。
+
 预设：`best`、`2160p`、`1080p`（默认）、`720p`、`480p`（限制最大高度，编码允许时合并为 mp4，否则为 mkv），以及 `audio`（m4a）。字幕以 `.srt` 保存在视频旁边。客户端不能直接传 yt-dlp 的原始参数。
 
 有意不支持的功能：整个播放列表（每个条目链接单独下载）、直播、cookies/登录、`yt-dlp -U` 自更新。

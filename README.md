@@ -29,6 +29,27 @@ the pinned yt-dlp executable; clients never reach yt-dlp options directly.
 
 OpenPlayX asks the user to confirm every tool that is not read-only.
 
+### Downloaded file transport
+
+Every file in `get_download` / `list_downloads` has `path`, `bytes`, and
+`download_path` (for example `/files/0123456789abcdef/0`; indexes are zero-based).
+Append `download_path` to the configured service root, preserving any
+reverse-proxy prefix. Only completed jobs can be fetched. These endpoints
+share the MCP bearer token and require the `read` scope:
+
+- `GET /files/{job_id}/{file_index}` streams the recorded file.
+- `HEAD /files/{job_id}/{file_index}` returns its headers without a body.
+- `Range: bytes=<offset>-` resumes an interrupted transfer; `ETag` / `If-Range`
+  allow clients to detect a changed file. Invalid ranges return HTTP 416.
+
+Responses include `Content-Length`, `Accept-Ranges: bytes`, and
+`Content-Disposition` with an RFC 5987 UTF-8 filename. Files outside the download
+root (including escaping symlinks), missing outputs, and unfinished jobs are
+never served. All tokens with `read` can read completed jobs, as with the MCP
+job listing. No MCP `resources/read` or base64 JSON payload is used. Clients
+must keep requests on the configured service address and must not forward
+bearer tokens through redirects.
+
 Presets: `best`, `2160p`, `1080p` (default), `720p`, `480p` (height caps,
 merged to mp4 when the codecs allow, otherwise mkv) and `audio` (m4a).
 Subtitles are saved as `.srt` next to the video. Clients never pass raw
